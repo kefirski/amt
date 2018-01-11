@@ -3,7 +3,6 @@ import torch.nn as nn
 
 from .position_wise_nn import PositionWiseNN
 from ..attention import MultiHeadAttention
-from ..embedding import PosEmbeddings
 
 
 class Decoder(nn.Module):

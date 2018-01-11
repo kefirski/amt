@@ -7,12 +7,6 @@ from nn.transformer import Encoder, Matcher
 
 class Critic(nn.Module):
     def __init__(self, layers, heads, h_size, k_size):
-        """
-        :param heads: Number of attention heads
-        :param h_size: hidden size of input
-        :param k_size: size of projected queries and keys
-        :param drop: drop prob
-        """
         super(Critic, self).__init__()
 
         self.h_size = h_size
@@ -39,7 +33,7 @@ class Critic(nn.Module):
             weight_norm(nn.Linear(50, 1))
         )
 
-    def forward(self, source, translation, source_mask, translation_mask):
+    def forward(self, source, translation, source_mask=None, translation_mask=None):
         """
         :param source: An float tensor with shape of [batch_size, source_len, h_size]
         :param translation: An float tensor with shape of [batch_size, seq_len, h_size]
@@ -50,4 +44,4 @@ class Critic(nn.Module):
         matching = self.matcher(translation, source, translation_mask, source_mask)
 
         matching = matching.sum(1)
-        return self.out(matching)
+        return self.out(matching).squeeze(1)

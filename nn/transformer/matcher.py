@@ -5,13 +5,6 @@ from ..transformer.decoder import DecoderLayer
 
 class Matcher(nn.Module):
     def __init__(self, n_layers, n_heads, h_size, k_size, v_size, dropout=0.):
-        """
-        :param n_heads: Number of attention heads
-        :param h_size: hidden size of input
-        :param k_size: size of projected queries and keys
-        :param v_size: size of projected values
-        :param dropout: drop prob
-        """
         super(Matcher, self).__init__()
 
         self.layers = nn.ModuleList([

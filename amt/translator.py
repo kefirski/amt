@@ -8,12 +8,6 @@ from nn.transformer import Encoder, Decoder
 
 class Translator(nn.Module):
     def __init__(self, vocab_size, layers, heads, h_size, k_size):
-        """
-        :param heads: Number of attention heads
-        :param h_size: hidden size of input
-        :param k_size: size of projected queries and keys
-        :param drop: drop prob
-        """
         super(Translator, self).__init__()
 
         self.vocab_size = vocab_size
@@ -91,8 +85,3 @@ class Translator(nn.Module):
         '''
         result = [idx if idx < loader.go_idx['ru'] else 0 for idx in beams[-1].data]
         return ' '.join(map(str, result))
-
-    def learnable_parameters(self):
-        for p in self.parameters():
-            if p.requires_grad:
-                yield p
