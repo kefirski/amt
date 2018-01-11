@@ -7,7 +7,7 @@ from ..embedding import PositionalEmbeddings
 
 
 class Encoder(nn.Module):
-    def __init__(self, vocab_size, max_len, pad_idx, n_layers, n_heads, h_size, k_size, v_size, dropout=0.1):
+    def __init__(self, vocab_size, max_len, pad_idx, n_layers, n_heads, h_size, k_size, v_size, dropout=0.):
         """
         :param vocab_size: Number of words in vocabulary
         :param max_len: Max length of encoder input

@@ -10,6 +10,7 @@ class PositionalEmbeddings(nn.Module):
     def __init__(self, path, vocab_size, max_len, h_size, padding_idx=0):
         super(PositionalEmbeddings, self).__init__()
 
+        self.vocab_size = vocab_size
         self.max_len = max_len
         self.embedding_size = h_size
 
@@ -31,7 +32,7 @@ class PositionalEmbeddings(nn.Module):
         return self.token_embeddings(input) + self.positional_embeddings(positional)
 
     def randn_embed(self):
-        return np.random.randn(self.embedding_size) / sqrt(h_size)
+        return np.random.randn(self.embedding_size) / sqrt(self.embedding_size)
 
     def _token_embedding_init(self, path):
         """
@@ -39,8 +40,8 @@ class PositionalEmbeddings(nn.Module):
         """
         keyed_vectors = KeyedVectors.load_word2vec_format(path, binary=True)
         embeddings = np.array([keyed_vectors.wv[str(idx)] if str(idx) in keyed_vectors.vocab else self.randn_embed()
-                               for idx in range(vocab_size)])
-        self.token_embeddings.weight = nn.Parameter(t.from_numpy(embeddings), requires_grad=False)
+                               for idx in range(self.vocab_size)])
+        self.token_embeddings.weight = nn.Parameter(t.from_numpy(embeddings).float(), requires_grad=False)
 
     def _position_embedding_init(self):
         encoding = np.array([

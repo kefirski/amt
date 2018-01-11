@@ -7,7 +7,7 @@ from ..embedding import PositionalEmbeddings
 
 
 class Decoder(nn.Module):
-    def __init__(self, vocab_size, max_len, pad_idx, n_layers, n_heads, h_size, k_size, v_size, dropout=0.1):
+    def __init__(self, vocab_size, max_len, pad_idx, n_layers, n_heads, h_size, k_size, v_size, dropout=0.):
         """
         :param vocab_size: Number of words in vocabulary
         :param max_len: Max length of encoder input
@@ -29,11 +29,11 @@ class Decoder(nn.Module):
             for _ in range(n_layers)
         ])
 
-    def forward(self, input, condition, condition_mask=None):
+    def forward(self, input, source, source_mask=None):
         """
         :param input: An long tensor with shape of [batch_size, input_len]
-        :param condition: An float tensor with shape of [batch_size, condition_len, h_size]
-        :param condition_mask: An byte tensor with shape of [batch_size, condition_len]
+        :param source: An float tensor with shape of [batch_size, condition_len, h_size]
+        :param source_mask: An byte tensor with shape of [batch_size, condition_len]
         :return: An float tensor with shape of [batch_size, input_len, h_size]
         """
 
@@ -43,12 +43,12 @@ class Decoder(nn.Module):
 
         self_mask = self.autogressive_mask(batch_size, input_len, input.is_cuda)
 
-        if condition_mask is not None:
-            condition_mask = condition_mask.unsqueeze(1).repeat(1, input_len, 1)
+        if source_mask is not None:
+            source_mask = source_mask.unsqueeze(1).repeat(1, input_len, 1)
 
         out = input
         for layer in self.layers:
-            out = layer(out, condition, self_mask, condition_mask)
+            out = layer(out, source, self_mask, source_mask)
 
         return out
 
@@ -76,17 +76,17 @@ class DecoderLayer(nn.Module):
         self.out_attention = MultiHeadAttention(n_heads, h_size, k_size, v_size, dropout)
         self.position_wise = PositionWiseNN(h_size, h_size * 4, dropout)
 
-    def forward(self, input, condition, self_mask, out_mask=None):
+    def forward(self, input, source, self_mask, source_mask=None):
         """
         :param input: An float tensor with shape of [batch_size, decoder_len, h_size]
-        :param condition: An float tensor with shape of [batch_size, encoder_len, h_size]
+        :param source: An float tensor with shape of [batch_size, encoder_len, h_size]
         :param self_mask: An byte tensor with shape of [batch_size, decoder_len, decoder_len]
-        :param out_mask: An byte tensor with shape of [batch_size, decoder_len, encoder_len]
+        :param source_mask: An byte tensor with shape of [batch_size, decoder_len, encoder_len]
         :return: An float tensor with shape of [batch_size, seq_len, h_size]
         """
 
         result, _ = self.self_attention(q=input, k=input, v=input, mask=self_mask)
-        result, _ = self.out_attention(q=result, k=condition, v=condition, mask=out_mask)
+        result, _ = self.out_attention(q=result, k=source, v=source, mask=source_mask)
         result = self.position_wise(result)
 
         return result
