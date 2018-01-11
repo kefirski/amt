@@ -35,13 +35,13 @@ class Translator(nn.Module):
 
         batch_size, seq_len = input.size()
 
-        source, mask = self.encoder(source)
+        source, mask, source_embeddings = self.encoder(source)
         out = self.decoder(input, source, mask)
 
         out = out.view(batch_size * seq_len, -1)
         out = self.out_fc(out).view(batch_size, seq_len, -1)
 
-        return out
+        return out, source_embeddings
 
     def translate(self, source, loader: Dataloader, max_len=80, n_beams=35):
 
@@ -49,7 +49,7 @@ class Translator(nn.Module):
 
         use_cuda = source.is_cuda
 
-        source, _ = self.encoder(source)
+        source, *_ = self.encoder(source)
 
         input = loader.go_input(1, use_cuda, lang='ru', volatile=True)
 

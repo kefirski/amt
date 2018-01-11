@@ -45,7 +45,7 @@ class Encoder(nn.Module):
         for layer in self.layers:
             out = layer(out, mask_unrolled)
 
-        return out, mask
+        return out, mask, input
 
     @staticmethod
     def unroll_mask(mask, size):

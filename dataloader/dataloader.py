@@ -35,8 +35,10 @@ class Dataloader():
         Special symbols are obtained for each vocabulary
         And their indexes are choosen in such way that they are unique
         '''
-        vocab_size = {lang: len(open(self.model_files[lang]['vocab'], "r").read().split('\n')) - 1
-                      for lang in self.langs}
+        vocab_size = {
+            lang: len(open(self.model_files[lang]['vocab'], "r").read().split('\n')) - 1
+            for lang in self.langs
+        }
         self.go_idx, self.stop_idx, self.pad_idx = ({lang: vocab_size[lang] + i for lang in self.langs}
                                                     for i in range(3))
         self.vocab_size = {

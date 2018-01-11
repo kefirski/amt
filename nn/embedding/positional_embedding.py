@@ -23,13 +23,19 @@ class PositionalEmbeddings(nn.Module):
         self._position_embedding_init()
 
     def forward(self, input):
-        batch_size, seq_len = input.size()
+
+        mixed = len(input.size()) == 3
+
+        batch_size, seq_len, *_ = input.size()
 
         positional = Variable(t.LongTensor([i for i in range(1, seq_len + 1)])).repeat(batch_size).view(batch_size, -1)
         if input.is_cuda:
             positional = positional.cuda()
 
-        return self.token_embeddings(input) + self.positional_embeddings(positional)
+        if mixed:
+            return t.bmm(input, self.token_embeddings.weight) + self.positional_embeddings(positional)
+        else:
+            return self.token_embeddings(input) + self.positional_embeddings(positional)
 
     def randn_embed(self):
         return np.random.randn(self.embedding_size) / sqrt(self.embedding_size)
