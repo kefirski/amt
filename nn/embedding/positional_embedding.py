@@ -6,9 +6,9 @@ from math import sqrt
 from torch.autograd import Variable
 
 
-class PositionalEmbeddings(nn.Module):
+class PosEmbeddings(nn.Module):
     def __init__(self, path, vocab_size, max_len, h_size, padding_idx=0):
-        super(PositionalEmbeddings, self).__init__()
+        super(PosEmbeddings, self).__init__()
 
         self.vocab_size = vocab_size
         self.max_len = max_len

@@ -7,7 +7,7 @@ from nn.transformer import Encoder, Decoder
 
 
 class Translator(nn.Module):
-    def __init__(self, vocab_size, max_len, pad_idx, layers, heads, h_size, k_size):
+    def __init__(self, vocab_size, layers, heads, h_size, k_size):
         """
         :param heads: Number of attention heads
         :param h_size: hidden size of input
@@ -18,40 +18,42 @@ class Translator(nn.Module):
 
         self.vocab_size = vocab_size
 
-        self.encoder = Encoder(vocab_size['en'], max_len['en'], pad_idx['en'], layers, heads, h_size, k_size, k_size)
-        self.decoder = Decoder(vocab_size['ru'], max_len['ru'], pad_idx['ru'], layers, heads, h_size, k_size, k_size)
+        self.encoder = Encoder(layers, heads, h_size, k_size, k_size)
+        self.decoder = Decoder(layers, heads, h_size, k_size, k_size)
 
         self.out_fc = nn.Sequential(
-            weight_norm(nn.Linear(h_size, self.vocab_size['ru'], bias=False)),
+            weight_norm(nn.Linear(h_size, self.vocab_size, bias=False)),
             nn.Softmax(dim=1)
         )
 
-    def forward(self, source, input):
+    def forward(self, source, input, mask=None):
         """
-        :param source: An long tensor with shape of [batch_size, condition_len]
-        :param input: An long tensor with shape of [batch_size, input_len]
+        :param source: An float tensor with shape of [batch_size, condition_len, h_size]
+        :param input: An float tensor with shape of [batch_size, input_len, h_size]
         :return: An float tensor with shape of [batch_size, input_len, vocab_size]
         """
 
-        batch_size, seq_len = input.size()
+        batch_size, seq_len, _ = input.size()
 
-        source, mask, source_embeddings = self.encoder(source)
+        source = self.encoder(source, mask)
         out = self.decoder(input, source, mask)
 
         out = out.view(batch_size * seq_len, -1)
         out = self.out_fc(out).view(batch_size, seq_len, -1)
 
-        return out, source_embeddings
+        return out
 
-    def translate(self, source, loader: Dataloader, max_len=80, n_beams=35):
+    def translate(self, source, embeddings, loader: Dataloader, max_len=80, n_beams=35):
 
         self.eval()
 
         use_cuda = source.is_cuda
 
-        source, *_ = self.encoder(source)
+        source = embeddings['en'](source)
+        source = self.encoder(source)
 
         input = loader.go_input(1, use_cuda, lang='ru', volatile=True)
+        input = embeddings['ru'](input)
 
         '''
         Starting point for beam search.
@@ -67,6 +69,7 @@ class Translator(nn.Module):
         for _ in range(max_len):
 
             input = loader.to_tensor([beam.data for beam in beams], use_cuda, lang='ru', volatile=True)
+            input = embeddings['ru'](input)
 
             out = self.decoder(input, source)
             out = out[:, -1]

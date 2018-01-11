@@ -3,16 +3,12 @@ import torch.nn as nn
 
 from .position_wise_nn import PositionWiseNN
 from ..attention import MultiHeadAttention
-from ..embedding import PositionalEmbeddings
+from ..embedding import PosEmbeddings
 
 
 class Decoder(nn.Module):
-    def __init__(self, vocab_size, max_len, pad_idx, n_layers, n_heads, h_size, k_size, v_size, dropout=0.):
+    def __init__(self, n_layers, n_heads, h_size, k_size, v_size, dropout=0.):
         """
-        :param vocab_size: Number of words in vocabulary
-        :param max_len: Max length of encoder input
-        :param pad_idx: Index of padding symbol
-
         :param n_heads: Number of attention heads
         :param h_size: hidden size of input
         :param k_size: size of projected queries and keys
@@ -21,9 +17,6 @@ class Decoder(nn.Module):
         """
         super(Decoder, self).__init__()
 
-        self.embeddings = PositionalEmbeddings('./dataloader/data/ru_embeddings.bin',
-                                               vocab_size, max_len, h_size, pad_idx)
-
         self.layers = nn.ModuleList([
             DecoderLayer(n_heads, h_size, k_size, v_size, dropout)
             for _ in range(n_layers)
@@ -31,15 +24,13 @@ class Decoder(nn.Module):
 
     def forward(self, input, source, source_mask=None):
         """
-        :param input: An long tensor with shape of [batch_size, input_len]
+        :param input: An float tensor with shape of [batch_size, input_len, h_size]
         :param source: An float tensor with shape of [batch_size, condition_len, h_size]
         :param source_mask: An byte tensor with shape of [batch_size, condition_len]
         :return: An float tensor with shape of [batch_size, input_len, h_size]
         """
 
-        batch_size, input_len = input.size()
-
-        input = self.embeddings(input)
+        batch_size, input_len, _ = input.size()
 
         self_mask = self.autogressive_mask(batch_size, input_len, input.is_cuda)
 
