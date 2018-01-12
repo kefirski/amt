@@ -76,13 +76,13 @@ if __name__ == "__main__":
 
         if i % 300 == 0:
             source, _, target = loader.torch(1, 'valid', args.use_cuda, volatile=True)
-            indexes = ' '.join(map(str, source[0].cpu().data.numpy()))
+            indexes = ' '.join(map(str, source[0].cpu().data.numpy()[1:-1]))
             subprocess.Popen(
                 'echo "{}" | spm_decode --model=./dataloader/data/en.model --input_format=id'.format(indexes),
                 shell=True
             )
             print('_________')
-            indexes = ' '.join(map(str, target[0].cpu().data.numpy()[:-1]))
+            indexes = ' '.join(map(str, target[0].cpu().data.numpy()[1:-1]))
             subprocess.Popen(
                 'echo "{}" | spm_decode --model=./dataloader/data/ru.model --input_format=id'.format(indexes),
                 shell=True
