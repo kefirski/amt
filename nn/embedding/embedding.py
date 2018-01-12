@@ -7,16 +7,14 @@ from torch.autograd import Variable
 
 
 class Embeddings(nn.Module):
-    def __init__(self, path, vocab_size, max_len, h_size, padding_idx=0):
+    def __init__(self, path, vocab_size, max_len, h_size):
         super(Embeddings, self).__init__()
 
         self.vocab_size = vocab_size
         self.max_len = max_len
         self.embedding_size = h_size
 
-        self.padding_idx = padding_idx
-
-        self.token_embeddings = nn.Embedding(vocab_size, h_size, padding_idx=padding_idx)
+        self.token_embeddings = nn.Embedding(vocab_size, h_size)
         self.positional_embeddings = nn.Embedding(int(max_len), h_size, padding_idx=0)
 
         self._token_embedding_init(path)

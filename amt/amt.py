@@ -13,9 +13,10 @@ class AMT(nn.Module):
         self.pad_idx = pad_idx
         self.lambd = lambd
 
+        # Embeddings do not require gradients – thus we are able to store them even in dict
         self.embeddings = {
-            'ru': Embeddings(path['ru'], vocab_size['ru'], max_len['ru'], h_size, pad_idx['ru']),
-            'en': Embeddings(path['en'], vocab_size['en'], max_len['en'], h_size, pad_idx['en'])
+            'ru': Embeddings(path['ru'], vocab_size['ru'], max_len['ru'], h_size),
+            'en': Embeddings(path['en'], vocab_size['en'], max_len['en'], h_size)
         }
 
         self.translator = Translator(vocab_size['ru'], layers, heads, h_size, k_size)
@@ -64,16 +65,19 @@ class AMT(nn.Module):
 
         optimizer.step()
 
-    def train_translator(self, source, input, optimizer):
+    def train_translator(self, source, input, target, optimizer):
         """
         :param source: An long tensor with shape of [bs, source_len]
         :param input: An long tensor with shape of [bs, input_len]
+        :param target: An long tensor with shape of [bs, input_len]
         :param optimizer: Optimizer instance
         """
 
         bs, _ = source.size()
 
         source_mask = t.eq(source, self.pad_idx['en']).data
+        target_mask = t.eq(target, self.pad_idx['ru']).data
+        del target
 
         source = self.embeddings['en'](source)
         input = self.embeddings['ru'](input)
@@ -81,9 +85,9 @@ class AMT(nn.Module):
         translation = self.translator(source, input, source_mask)
         translation = self.embeddings['ru'](translation)
 
-        loss = -self.critic(source, translation, source_mask).mean()
+        loss = self.critic(source, translation, source_mask, target_mask).mean().neg()
         loss.backward()
-        
+
         optimizer.step()
 
     def gradient_penalty(self, interpolation, interpolation_loss):
@@ -92,13 +96,14 @@ class AMT(nn.Module):
         return self.lambd * ((gradients.norm(2, dim=1) - 1) ** 2).mean()
 
     def critic_train(self):
-        for parameter in self.translator.parameters():
-            parameter.requires_grad = False
-        for parameter in self.critic.parameters():
-            parameter.requires_grad = True
+        self._turn_parameters(self.translator.parameters(), False)
+        self._turn_parameters(self.critic.parameters(), True)
 
     def translator_train(self):
-        for parameter in self.translator.parameters():
-            parameter.requires_grad = True
-        for parameter in self.critic.parameters():
-            parameter.requires_grad = False
+        self._turn_parameters(self.translator.parameters(), True)
+        self._turn_parameters(self.critic.parameters(), False)
+
+    @staticmethod
+    def _turn_parameters(parameters, value):
+        for par in parameters:
+            par.requires_grad = value
