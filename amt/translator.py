@@ -16,10 +16,10 @@ class Translator(nn.Module):
 
         self.out_fc = nn.Sequential(
             weight_norm(nn.Linear(h_size, self.vocab_size, bias=False)),
-            nn.Softmax(dim=1)
+            nn.Softmax(dim=-1)
         )
 
-    def forward(self, source, input, mask=None):
+    def forward(self, source, input, source_mask=None):
         """
         :param source: An float tensor with shape of [batch_size, condition_len, h_size]
         :param input: An float tensor with shape of [batch_size, input_len, h_size]
@@ -28,8 +28,8 @@ class Translator(nn.Module):
 
         batch_size, seq_len, _ = input.size()
 
-        source = self.encoder(source, mask)
-        out = self.decoder(input, source, mask)
+        source = self.encoder(source, source_mask)
+        out = self.decoder(input, source, source_mask)
 
         out = out.view(batch_size * seq_len, -1)
         out = self.out_fc(out).view(batch_size, seq_len, -1)
