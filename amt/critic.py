@@ -21,10 +21,10 @@ class Critic(nn.Module):
             weight_norm(nn.Linear(h_size, h_size)),
             nn.SELU(),
 
-            weight_norm(nn.Linear(h_size, h_size / 2)),
+            weight_norm(nn.Linear(h_size, 400)),
             nn.SELU(),
 
-            weight_norm(nn.Linear(h_size / 2, 200)),
+            weight_norm(nn.Linear(400, 200)),
             nn.SELU(),
 
             weight_norm(nn.Linear(200, 50)),
@@ -44,7 +44,7 @@ class Critic(nn.Module):
         matching = self.matcher(translation, source, translation_mask, source_mask)
 
         if translation_mask is not None:
-            translation_mask = translation_mask.repeat(1, 1, matching.size(-1))
-            matching.masked_fill_(translation_mask, 0)
+            translation_mask = translation_mask.unsqueeze(2).repeat(1, 1, matching.size(-1))
+            matching.data.masked_fill_(translation_mask, 0)
 
         return self.out(matching.sum(1)).squeeze(1)
