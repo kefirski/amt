@@ -43,5 +43,8 @@ class Critic(nn.Module):
         source = self.encoder(source, source_mask)
         matching = self.matcher(translation, source, translation_mask, source_mask)
 
-        matching = matching.sum(1)
-        return self.out(matching).squeeze(1)
+        if translation_mask is not None:
+            translation_mask = translation_mask.repeat(1, 1, matching.size(-1))
+            matching.masked_fill_(translation_mask, 0)
+
+        return self.out(matching.sum(1)).squeeze(1)

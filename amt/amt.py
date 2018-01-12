@@ -91,8 +91,7 @@ class AMT(nn.Module):
         optimizer.step()
 
     def gradient_penalty(self, interpolation, interpolation_loss):
-        gradients = grad(outputs=interpolation_loss, inputs=interpolation,
-                         create_graph=True, retain_graph=True, only_inputs=True)[0]
+        gradients = grad(interpolation_loss, interpolation, create_graph=True, retain_graph=True, only_inputs=True)[0]
         return self.lambd * ((gradients.norm(2, dim=1) - 1) ** 2).mean()
 
     def critic_train(self):
