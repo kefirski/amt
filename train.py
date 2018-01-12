@@ -54,10 +54,10 @@ if __name__ == "__main__":
 
             real_loss, fake_loss = amt.critic_backward(source, input, target)
             if i % 10 == 0:
-                print('critic i {} j {} :: real {} fake {} wass {}'.format(i, j,
-                                                                           real_loss.data.numpy()[0],
-                                                                           fake_loss.data.numpy()[0],
-                                                                           (real_loss - fake_loss).data.numpy()[0]))
+                print('critic i {} j {} real {} fake {} wass {}'.format(i, j,
+                                                                        real_loss.cpu().data.numpy()[0],
+                                                                        fake_loss.cpu().data.numpy()[0],
+                                                                        (real_loss - fake_loss).cpu().data.numpy()[0]))
 
             critic_optim.step()
 
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
         loss = amt.translator_backward(source, input, target)
         if i % 10 == 0:
-            print('translator i {} :: fake {}'.format(i, loss.data.numpy()[0]))
+            print('translator i {} fake {}'.format(i, loss.cpu().data.numpy()[0]))
 
         translator_optim.step()
 
