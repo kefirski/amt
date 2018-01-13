@@ -7,7 +7,7 @@ from . import Translator, Critic
 
 
 class AMT(nn.Module):
-    def __init__(self, path, vocab_size, max_len, pad_idx, layers, heads, h_size, k_size, lambd=10.):
+    def __init__(self, path, vocab_size, max_len, pad_idx, layers, heads, h_size, k_size, lambd=50.):
         super(AMT, self).__init__()
 
         self.pad_idx = pad_idx
@@ -20,7 +20,7 @@ class AMT(nn.Module):
         }
 
         self.translator = Translator(vocab_size['ru'], layers, heads, h_size, k_size)
-        self.critic = Critic(layers, heads, h_size, k_size)
+        self.critic = Critic(1, 8, h_size, k_size)
 
     def critic_backward(self, source, input, target):
         """
@@ -88,7 +88,7 @@ class AMT(nn.Module):
         translation = self.translator(source, input, source_mask)
         translation = self.embeddings['ru'](translation)
 
-        loss = self.critic(source, translation, source_mask, target_mask).mean().neg()
+        loss = self.critic(source, translation, source_mask).mean().neg()
 
         loss.backward()
 

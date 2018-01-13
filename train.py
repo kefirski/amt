@@ -1,5 +1,6 @@
 import argparse
 import subprocess
+from nn.utils import ScheduledOptim
 
 import torch as t
 from torch.optim import Adam
@@ -31,14 +32,14 @@ if __name__ == "__main__":
 
     amt = AMT({'en': './dataloader/data/en_embeddings.bin', 'ru': './dataloader/data/ru_embeddings.bin'},
               loader.vocab_size, loader.max_len, loader.pad_idx,
-              layers=6, heads=6, h_size=512, k_size=64)
+              layers=6, heads=8, h_size=512, k_size=64, lambd=args.lambd)
     if args.use_cuda:
         amt = amt.cuda()
         for embed in amt.embeddings.values():
             embed = embed.cuda()
 
-    translator_optim = Adam(amt.translator.parameters(), 0.0001)
-    critic_optim = Adam(amt.critic.parameters(), 0.00001)
+    translator_optim = ScheduledOptim(Adam(amt.translator.parameters(), betas=(0.9, 0.98), eps=1e-9), 512, 4000)
+    critic_optim = ScheduledOptim(Adam(amt.critic.parameters(), betas=(0.9, 0.98), eps=1e-9), 512, 1000)
 
     print('Model have initialized')
 
@@ -46,13 +47,13 @@ if __name__ == "__main__":
 
         amt.critic_train()
 
-        for j in range(8):
+        for j in range(1):
             critic_optim.zero_grad()
             translator_optim.zero_grad()
+            for k in range(8):
+                source, input, target = loader.torch(args.batch_size, 'train', args.use_cuda)
 
-            source, input, target = loader.torch(args.batch_size, 'train', args.use_cuda)
-
-            real_loss, fake_loss = amt.critic_backward(source, input, target)
+                real_loss, fake_loss = amt.critic_backward(source, input, target)
             if i % 10 == 0:
                 print('critic i {} j {} real {} fake {} wass {}'.format(i, j,
                                                                         real_loss.cpu().data.numpy()[0],
@@ -65,10 +66,11 @@ if __name__ == "__main__":
 
         critic_optim.zero_grad()
         translator_optim.zero_grad()
+        for j in range(8):
+            source, input, target = loader.torch(args.batch_size, 'train', args.use_cuda)
 
-        source, input, target = loader.torch(args.batch_size, 'train', args.use_cuda)
+            loss = amt.translator_backward(source, input, target)
 
-        loss = amt.translator_backward(source, input, target)
         if i % 10 == 0:
             print('translator i {} fake {}'.format(i, loss.cpu().data.numpy()[0]))
 

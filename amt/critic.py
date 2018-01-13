@@ -15,22 +15,13 @@ class Critic(nn.Module):
         self.matcher = Matcher(layers, heads, h_size, k_size, k_size)
 
         self.out = nn.Sequential(
-            weight_norm(nn.Linear(h_size, h_size)),
+            nn.Linear(h_size, h_size),
             nn.SELU(),
 
-            weight_norm(nn.Linear(h_size, h_size)),
+            nn.Linear(h_size, h_size),
             nn.SELU(),
 
-            weight_norm(nn.Linear(h_size, 400)),
-            nn.SELU(),
-
-            weight_norm(nn.Linear(400, 200)),
-            nn.SELU(),
-
-            weight_norm(nn.Linear(200, 50)),
-            nn.SELU(),
-
-            weight_norm(nn.Linear(50, 1))
+            nn.Linear(h_size, 1)
         )
 
     def forward(self, source, translation, source_mask=None, translation_mask=None):

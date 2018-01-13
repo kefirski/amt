@@ -56,7 +56,7 @@ class Dataloader():
         }
 
         self.max_len = {
-            lang: max([len(line) + 2 for target in ['train', 'valid'] for line in self.data[lang][target]])
+            lang: max([len(line) + 4 for target in ['train', 'valid'] for line in self.data[lang][target]])
             for lang in self.langs
         }
 
