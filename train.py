@@ -39,21 +39,20 @@ if __name__ == "__main__":
             embed = embed.cuda()
 
     translator_optim = ScheduledOptim(Adam(amt.translator.parameters(), betas=(0.9, 0.98), eps=1e-9), 512, 4000)
-    critic_optim = ScheduledOptim(Adam(amt.critic.parameters(), betas=(0.9, 0.98), eps=1e-9), 512, 1000)
+    critic_optim = ScheduledOptim(Adam(amt.critic.parameters(), betas=(0.9, 0.98), eps=1e-9), 512, 50)
 
     print('Model have initialized')
 
     for i in range(args.num_iterations):
 
         amt.critic_train()
-
-        for j in range(1):
+        critic_optim.update_learning_rate()
+        for j in range(10):
             critic_optim.zero_grad()
             translator_optim.zero_grad()
-            for k in range(8):
-                source, input, target = loader.torch(args.batch_size, 'train', args.use_cuda)
+            source, input, target = loader.torch(args.batch_size, 'train', args.use_cuda)
 
-                real_loss, fake_loss = amt.critic_backward(source, input, target)
+            real_loss, fake_loss = amt.critic_backward(source, input, target)
             if i % 10 == 0:
                 print('critic i {} j {} real {} fake {} wass {}'.format(i, j,
                                                                         real_loss.cpu().data.numpy()[0],
@@ -63,7 +62,7 @@ if __name__ == "__main__":
             critic_optim.step()
 
         amt.translator_train()
-
+        translator_optim.update_learning_rate()
         critic_optim.zero_grad()
         translator_optim.zero_grad()
         for j in range(8):

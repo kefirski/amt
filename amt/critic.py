@@ -38,4 +38,4 @@ class Critic(nn.Module):
             translation_mask = translation_mask.unsqueeze(2).repeat(1, 1, matching.size(-1))
             matching.data.masked_fill_(translation_mask, 0)
 
-        return self.out(matching.sum(1)).squeeze(1)
+        return self.out(matching).sum(1).squeeze(1)

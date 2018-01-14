@@ -20,7 +20,7 @@ class AMT(nn.Module):
         }
 
         self.translator = Translator(vocab_size['ru'], layers, heads, h_size, k_size)
-        self.critic = Critic(1, 8, h_size, k_size)
+        self.critic = Critic(layers, heads, h_size, k_size)
 
     def critic_backward(self, source, input, target):
         """
@@ -88,7 +88,7 @@ class AMT(nn.Module):
         translation = self.translator(source, input, source_mask)
         translation = self.embeddings['ru'](translation)
 
-        loss = self.critic(source, translation, source_mask).mean().neg()
+        loss = self.critic(source, translation, source_mask, target_mask).mean().neg()
 
         loss.backward()
 
