@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
         amt.critic_train()
 
-        for j in range(10):
+        for j in range(4):
 
             critic_optim.zero_grad()
             translator_optim.zero_grad()
