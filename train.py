@@ -1,6 +1,5 @@
 import argparse
 import subprocess
-from nn.utils import ScheduledOptim
 
 import torch as t
 from torch.optim import Adam
@@ -38,18 +37,20 @@ if __name__ == "__main__":
         for embed in amt.embeddings.values():
             embed = embed.cuda()
 
-    translator_optim = ScheduledOptim(Adam(amt.translator.parameters(), betas=(0.9, 0.98), eps=1e-9), 512, 4000)
-    critic_optim = ScheduledOptim(Adam(amt.critic.parameters(), betas=(0.9, 0.98), eps=1e-9), 512, 50)
+    translator_optim = Adam(amt.translator.parameters(), 0.0001, betas=(0.9, 0.98), eps=1e-9)
+    critic_optim = Adam(amt.critic.parameters(), 0.0001, betas=(0., 0.9), eps=1e-9)
 
     print('Model have initialized')
 
     for i in range(args.num_iterations):
 
         amt.critic_train()
-        critic_optim.update_learning_rate()
+
         for j in range(10):
+
             critic_optim.zero_grad()
             translator_optim.zero_grad()
+
             source, input, target = loader.torch(args.batch_size, 'train', args.use_cuda)
 
             real_loss, fake_loss = amt.critic_backward(source, input, target)
@@ -62,9 +63,12 @@ if __name__ == "__main__":
             critic_optim.step()
 
         amt.translator_train()
-        translator_optim.update_learning_rate()
+
         critic_optim.zero_grad()
         translator_optim.zero_grad()
+
+        loss = None
+        
         for j in range(8):
             source, input, target = loader.torch(args.batch_size, 'train', args.use_cuda)
 
