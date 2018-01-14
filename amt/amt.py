@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.autograd import Variable, grad
 
 from nn.embedding.embedding import Embeddings
+from nn.utils import GumbelSoftmax
 from . import Translator, Critic
 
 
@@ -20,7 +21,7 @@ class AMT(nn.Module):
         }
 
         self.translator = Translator(vocab_size['ru'], layers, heads, h_size, k_size)
-        self.critic = Critic(layers, heads, h_size, k_size)
+        self.critic = Critic(h_size)
 
     def critic_backward(self, source, input, target):
         """
@@ -40,6 +41,9 @@ class AMT(nn.Module):
         target = self.embeddings['ru'](target)
 
         translation = self.translator(source, input, source_mask)
+        bs, sl, vs = translation.size()
+        translation = translation.view(-1, vs)
+        translation = GumbelSoftmax(translation, 0.96, hard=True).view(bs, sl, vs)
         translation = self.embeddings['ru'](translation)
 
         source = source.repeat(2, 1, 1)
@@ -86,6 +90,9 @@ class AMT(nn.Module):
         input = self.embeddings['ru'](input)
 
         translation = self.translator(source, input, source_mask)
+        bs, sl, vs = translation.size()
+        translation = translation.view(-1, vs)
+        translation = GumbelSoftmax(translation, 0.96, hard=True).view(bs, sl, vs)
         translation = self.embeddings['ru'](translation)
 
         loss = self.critic(source, translation, source_mask, target_mask).mean().neg()
